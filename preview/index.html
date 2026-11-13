@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StayInTrackApp · App flow</title>
+<link rel="stylesheet" href="../design-system/tokens.css">
+<link rel="stylesheet" href="../design-system/components/bundle.css">
+<style>
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body)}
+main{max-width:1080px;margin:0 auto;padding:48px 16px 96px}
+h1{font-family:var(--font-display);font-weight:400;font-size:52px;line-height:56px;margin:0}
+h2{font-family:var(--font-display);font-weight:400;font-size:28px;line-height:32px;margin:0}
+p.lead{font-size:18px;line-height:28px;color:var(--ink-muted);max-width:680px}
+.underline{display:block;width:260px;height:10px;margin:6px 0 0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:20px 0 8px}
+.btn{display:inline-block;font:600 16px/22px var(--font-body);padding:12px 22px;border-radius:999px;border:2px solid var(--ink);text-decoration:none;cursor:pointer}
+.btn-primary{background:var(--ink);color:var(--on-ink)}
+.btn-ghost{background:var(--paper-raised);color:var(--ink)}
+.btn:focus-visible,.f-card:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.status{font-size:14px;line-height:20px;color:var(--ink-muted)}
+.stage{margin-top:40px}
+.stage-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.stage-num{font-family:var(--font-script);font-size:32px;line-height:32px;color:var(--rose)}
+.stage-note{font-size:15px;line-height:22px;color:var(--ink-muted);margin:-6px 0 14px;max-width:720px}
+.f-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.f-card{flex:1 1 200px;max-width:280px;display:block;padding:16px 18px;border-radius:var(--radius-lg);background:var(--paper-raised);box-shadow:var(--shadow-page);color:var(--ink);text-decoration:none}
+.f-card:hover{background:var(--blush-soft)}
+.f-title{font-weight:600;font-size:17px;line-height:24px}
+.f-file{font-size:12px;line-height:16px;color:var(--ink-muted);font-family:ui-monospace,monospace}
+.f-try{margin:8px 0 0;padding-left:18px;font-size:14px;line-height:20px;color:var(--ink-muted)}
+.f-arrow{align-self:center;font-family:var(--font-script);font-size:28px;color:var(--ink-muted)}
+.f-from{margin:8px 0 0;font-size:13px;line-height:18px;color:var(--ink-muted)}
+.f-from b{color:var(--ink);font-weight:600}
+.f-tag{display:inline-block;margin-left:6px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:1px 8px;border-radius:999px;background:var(--highlight);color:var(--on-sticky)}
+.f-tag.f-tag-ai{background:var(--blush-soft);color:var(--ink)}
+.out{margin-top:48px;padding:18px 20px;border:2px dashed var(--grid-line);border-radius:var(--radius-lg);font-size:15px;line-height:22px;color:var(--ink-muted)}
+.out a{color:var(--ink);font-weight:600}
+@media (max-width:640px){.f-arrow{display:none}.f-card{max-width:none}}
+</style></head>
+<body>
+<main>
+<h1>App flow</h1>
+<svg class="underline" viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 8c40-4 90-5 140-4s100 3 154-1" fill="none" stroke="var(--mustard)" stroke-width="5" stroke-linecap="round"/></svg>
+<p class="lead">The finished screens, linked the way the app works. Start at Login and move with the menu and the buttons on each page. The AI helper is in the menu and also one tap away from the tool it reads, marked with a sparkle. Habits you create, sheets you start, targets you save, tasks you cross out and what the helper can see stay until you reset the demo or close the tab.</p>
+<div class="top">
+  <a class="btn btn-primary" href="screens/login.html">Start the flow →</a>
+  <button class="btn btn-ghost" type="button" id="reset">Reset demo data</button>
+  <span class="status" id="status" aria-live="polite"></span>
+</div>
+
+<section class="stage" aria-labelledby="s1">
+  <div class="stage-head"><span class="stage-num">1</span><h2 id="s1">Get in</h2></div>
+  <div class="f-row">
+    <a class="f-card" href="screens/login.html"><div class="f-title">Login</div><div class="f-file">login.html</div>
+      <ul class="f-try"><li>Log in or Start a new journal → Home</li></ul></a>
+    <span class="f-arrow" aria-hidden="true">→</span>
+    <a class="f-card" href="screens/home.html"><div class="f-title">Home</div><div class="f-file">home.html</div>
+      <ul class="f-try"><li>Open the tracker → Minimal tracker</li><li>Your tools · Open → each tool</li><li>Where do I start? → Ask the helper</li></ul></a>
+    <span class="f-arrow" aria-hidden="true">→</span>
+    <a class="f-card" href="screens/suggestions.html"><div class="f-title">Suggestions</div><div class="f-file">suggestions.html</div>
+      <ul class="f-try"><li>Menu · Suggestions</li></ul></a>
+  </div>
+</section>
+
+<section class="stage" aria-labelledby="s2">
+  <div class="stage-head"><span class="stage-num">2</span><h2 id="s2">Minimal tracker</h2></div>
+  <p class="stage-note">Menu · Tools · Minimal tracker. The core loop: create a habit, log it each day, look back on its sheets.</p>
+  <div class="f-row">
+    <a class="f-card" href="screens/minimal-tracker.html"><div class="f-title">Minimal tracker <span class="f-tag">updated</span></div><div class="f-file">minimal-tracker.html</div>
+      <ul class="f-try"><li>Log today, or Not today for the note of the day</li><li>Change targets (from today)</li><li>Another note ↻</li><li>Change targets: from today or from the next sheet</li></ul></a>
+    <span class="f-arrow" aria-hidden="true">→</span>
+    <a class="f-card" href="screens/create-habit.html"><div class="f-title">Create a habit <span class="f-tag">updated</span></div><div class="f-file">create-habit.html</div>
+      <ul class="f-try"><li>+ New habit on the tracker</li><li>Start date: today or later</li><li>Open my tracker → the new habit</li></ul></a>
+  </div>
+  <div class="f-row" style="margin-top:10px">
+    <a class="f-card" href="screens/my-habits-calendar.html"><div class="f-title">My habits</div><div class="f-file">my-habits-calendar.html</div>
+      <ul class="f-try"><li>My habits → on the tracker</li><li>Open a post-it → Habit</li><li>Calendar → a week</li></ul></a>
+    <span class="f-arrow" aria-hidden="true">→</span>
+    <a class="f-card" href="screens/habit.html"><div class="f-title">Habit</div><div class="f-file">habit.html</div>
+      <ul class="f-try"><li>All sheets, newest first</li><li>Start a new sheet (only when none is running) → tracker</li></ul></a>
+    <span class="f-arrow" aria-hidden="true">→</span>
+    <a class="f-card" href="screens/week.html"><div class="f-title">My week</div><div class="f-file">week.html</div>
+      <ul class="f-try"><li>Habits tracked that week</li><li>Open a habit → Habit</li><li>Summary of this week → Weekly summary</li></ul></a>
+  </div>
+</section>
+
+<section class="stage" aria-labelledby="s3">
+  <div class="stage-head"><span class="stage-num">3</span><h2 id="s3">Other tools</h2></div>
+  <p class="stage-note">Menu · Tools.</p>
+  <div class="f-row">
+    <a class="f-card" href="screens/distractors.html"><div class="f-title">Distractors</div><div class="f-file">distractors.html</div>
+      <ul class="f-try"><li>List what pulls you away and decide</li><li>When do they show up? → Weekly summary · Distractions</li></ul></a>
+    <a class="f-card" href="screens/catch-a-wish.html"><div class="f-title">Catch a wish</div><div class="f-file">catch-a-wish.html</div>
+      <ul class="f-try"><li>Park the urge, pick when to check it</li></ul></a>
+  </div>
+</section>
+
+<section class="stage" aria-labelledby="s4">
+  <div class="stage-head"><span class="stage-num">4</span><h2 id="s4">AI helper</h2></div>
+  <p class="stage-note">Menu · AI helper has two things: one chat and one weekly report. The rest of the helper lives inside the tools, marked with a sparkle. Every screen reads the same demo data as the tools, and nothing changes until you press a button.</p>
+  <div class="f-row">
+    <a class="f-card" href="screens/helper.html"><div class="f-title">Ask the helper <span class="f-tag f-tag-ai">new</span></div><div class="f-file">helper.html · was Plan with AI + Ask your data</div>
+      <ul class="f-try"><li>Where do I start? → next step from Home's tasks, by energy</li><li>Break down a task → steps in the list; I'll do it now → Done crosses it out on Home too</li><li>Which habits were hardest this month? → Show me by week</li><li>Manage what the helper can see → turn a source off and ask again</li></ul>
+      <p class="f-from"><b>From</b> Home · Where do I start?, Weekly summary question chips &nbsp;<b>To</b> Home, Weekly summary tabs</p></a>
+    <a class="f-card" href="screens/weekly-summary.html"><div class="f-title">Weekly summary <span class="f-tag f-tag-ai">new</span></div><div class="f-file">weekly-summary.html · tabs Overview, Distractions, Habits</div>
+      <ul class="f-try"><li>Overview: This week, Last week, Last 30 days, numbers from the tracker sheets</li><li>Distractions (was Distraction patterns) → Distractors, Catch a wish</li><li>Habits (was Habit suggestions) → Apply from the next sheet → the tracker's editor</li></ul>
+      <p class="f-from"><b>From</b> My week · Summary of this week, Distractors · When do they show up? &nbsp;<b>To</b> My week, the tracker, the helper</p></a>
+  </div>
+  <div class="f-row" style="margin-top:10px">
+    <a class="f-card" href="screens/minimal-tracker.html?habit=h-journal"><div class="f-title">In the tracker <span class="f-tag f-tag-ai">new</span></div><div class="f-file">minimal-tracker.html?habit=h-journal</div>
+      <ul class="f-try"><li>A sheet ended → the suggestion shows up in the card</li><li>Keep them, Use the new targets, or Adjust → Targets for the next sheet</li><li>Start a new sheet today uses them</li></ul>
+      <p class="f-from"><b>Also</b> Change targets → From today or From the next sheet</p></a>
+    <a class="f-card" href="screens/home.html"><div class="f-title">On Home <span class="f-tag f-tag-ai">updated</span></div><div class="f-file">home.html</div>
+      <ul class="f-try"><li>Tasks are shared with the helper</li><li>Habit of the week is read-only → Log today in the tracker</li><li>Caught wishes and Tip of the day open their screens</li></ul></a>
+  </div>
+</section>
+
+<p class="out"><b>Components:</b> each one has its usage rules and a live card in <code>design-system/components/&lt;Component&gt;/</code>. Review and decisions for the AI helper: <code>mejoras-ai-workflow.md</code>.</p>
+</main>
+<script>
+document.getElementById("reset").onclick = function () {
+  try { ["sit-created-habits", "sit-new-sheets", "sit-next-targets", "sit-tasks", "sit-ai-scope"].forEach(function (k) { sessionStorage.removeItem(k); }); } catch (e) {}
+  document.getElementById("status").textContent = "Demo data reset.";
+};
+</script>
+<button id="sit-theme" type="button" style="position:fixed;right:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);cursor:pointer">Dark mode</button>
+<script>
+(function(){var b=document.getElementById('sit-theme'),r=document.documentElement;
+function set(t){r.setAttribute('data-theme',t);b.textContent=t==='dark'?'Light mode':'Dark mode';try{localStorage.setItem('sit-theme',t)}catch(e){}}
+var s='light';try{s=localStorage.getItem('sit-theme')||'light'}catch(e){}set(s);
+b.onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};})();
+</script>
+</body>
+</html>

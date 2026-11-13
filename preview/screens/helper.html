@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><title>AI helper · Ask the helper · StayInTrackApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components/bundle.css">
+<script src="../vendor/react.production.min.js"></script>
+<script src="../vendor/react-dom.production.min.js"></script>
+<script src="../../design-system/components/bundle.js"></script>
+<script src="../flow.js"></script>
+<!-- demo data shared with Home and the tracker; replace with your API -->
+<script src="../../modules/habits/sample-data.js"></script>
+<script src="../ai-demo.js"></script><style>html,body{margin:0;background:var(--paper)}</style></head>
+<body>
+<div id="root"></div>
+<script>
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.htm=e()}(this,function(){var n=function(e,t,u,s){var r;t[0]=0;for(var p=1;p<t.length;p++){var h=t[p++],o=t[p]?(t[0]|=h?1:2,u[t[p++]]):t[++p];3===h?s[0]=o:4===h?s[1]=Object.assign(s[1]||{},o):5===h?(s[1]=s[1]||{})[t[++p]]=o:6===h?s[1][t[++p]]+=o+"":h?(r=e.apply(o,n(e,o,u,["",null])),s.push(r),o[0]?t[0]|=2:(t[p-2]=0,t[p]=r)):s.push(o)}return s},e=new Map;return function(t){var u=e.get(this);return u||(u=new Map,e.set(this,u)),(u=n(this,u.get(t)||(u.set(t,u=function(n){for(var e,t,u=1,s="",r="",p=[0],h=function(n){1===u&&(n||(s=s.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?p.push(0,n,s):3===u&&(n||s)?(p.push(3,n,s),u=2):2===u&&"..."===s&&n?p.push(4,n,0):2===u&&s&&!n?p.push(5,0,!0,s):u>=5&&((s||!n&&5===u)&&(p.push(u,0,s,t),u=6),n&&(p.push(u,n,0,t),u=6)),s=""},o=0;o<n.length;o++){o&&(1===u&&h(),h(o));for(var f=0;f<n[o].length;f++)e=n[o][f],1===u?"<"===e?(h(),p=[p],u=3):s+=e:4===u?"--"===s&&">"===e?(u=1,s=""):s=e+s[0]:r?e===r?r="":s+=e:'"'===e||"'"===e?r=e:">"===e?(h(),u=1):u&&("="===e?(u=5,t=s,s=""):"/"===e&&(u<5||">"===n[o][f+1])?(h(),3===u&&(p=p[0]),u=p,(p=p[0]).push(2,0,u),u=0):" "===e||"\t"===e||"\n"===e||"\r"===e?(h(),u=2):s+=e),3===u&&"!--"===s&&(u=4,p=p[0])}return h(),p}(t)),u),arguments,[])).length>1?u:u[0]}});
+var S = window.StayInTrack, html = htm.bind(React.createElement), useState = React.useState, A = window.SITAI;
+function Shell(p) {
+  return html`<div class="sit-root" style=${{minHeight: p.h + 'px'}}>
+    <${S.NavBar} active=${p.active} user="Ana" ...${SITFlow.nav}/>
+    <${S.DoodleField} seed=${p.seed} count=${15} style=${{minHeight: (p.h - 62) + 'px'}}>
+      <main style=${{maxWidth: '1180px', margin: '0 auto', padding: '36px 40px 56px'}}>${p.children}</main>
+    <//>
+  </div>`;
+}
+var sub = {margin: '10px 0 0', fontSize: '18px', lineHeight: '28px', color: 'var(--ink-muted)', maxWidth: '640px'};
+var label = {fontSize: '12px', lineHeight: '16px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--ink-muted)'};
+var hand = {fontFamily: 'var(--font-script)', fontSize: '24px', lineHeight: '28px'};
+var small = {fontSize: '14px', lineHeight: '20px', color: 'var(--ink-muted)'};
+var box = {border: '2px solid var(--rule)', borderRadius: '12px', padding: '6px 18px 10px', background: 'var(--paper-raised)', marginTop: '12px'};
+
+function Title(p) {
+  return html`<div style=${{display: 'flex', alignItems: 'flex-start', gap: '14px'}}>
+    <span style=${{marginTop: '6px'}}><${S.Doodle} kind=${p.icon} tone=${p.tone || 'mustard'} size=${34}/></span>
+    <div><${S.HandTitle} as="h1" size="lg">${p.children}<//><p style=${sub}>${p.sub}</p></div>
+  </div>`;
+}
+function param(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+
+/* ---------- one helper, two jobs: plan today (reads tasks) and answer about the journal (reads habits, distractors, wishes) ---------- */
+var START = ['Where do I start?', 'Which habits were hardest this month?', 'When do I get distracted most?'];
+var RANK = {high: 0, mid: 1, low: 2};
+function breakQ(t) { return 'Break down "' + t.txt + '"'; }
+// Low energy: the shortest task. Ok: the most important, then the shortest. High: the most important, then the biggest.
+function pick(list, energy, not) {
+  var l = list.filter(function (t) { return !not || t.id !== not; }).slice();
+  l.sort(function (a, b) {
+    if (energy === 'Low') return a.min - b.min;
+    return RANK[a.p] - RANK[b.p] || (energy === 'High' ? b.min - a.min : a.min - b.min);
+  });
+  return l[0] || null;
+}
+function firstOpenStep(t) {
+  if (!t.split || !t.breakdown) return -1;
+  var done = t.stepsDone || [];
+  for (var i = 0; i < t.breakdown.length; i++) if (!done[i]) return i;
+  return -1;
+}
+function nextFor(t) {
+  var i = firstOpenStep(t);
+  return i < 0 ? {id: t.id, txt: t.txt, min: t.min, step: -1} : {id: t.id, txt: t.breakdown[i].txt, of: t.txt, min: t.breakdown[i].min, step: i};
+}
+
+/* Scripted answers built from the shared demo data. In the app: POST /api/helper { question, energy } (see design-system/README.md). */
+function reply(q, ctx) {
+  var sc = A.scope.get(), all = A.tasks.all(), pend = all.filter(function (t) { return !t.c; });
+  function need(k, what) {
+    return sc[k] ? null : {body: html`<p>I can't see your ${what} right now, so I can't answer that. You can turn them on in <b>What the helper can see</b>.</p>`, manage: true};
+  }
+  var big = pend.filter(function (t) { return t.breakdown && !t.split; })[0];
+  var planFollow = [big ? breakQ(big) : 'Pick another', 'I only have 15 minutes'];
+  var m;
+
+  if (q === 'Where do I start?' || q === 'Plan my day') {
+    var n = need('tasks', 'tasks'); if (n) return n;
+    if (!pend.length) return {body: html`<p>Everything on today's list is crossed out. Pat on the back.</p>`, follow: START.slice(1)};
+    var t = pick(pend, ctx.energy);
+    return {body: html`<p>You already crossed out ${all.length - pend.length} of ${all.length} today. Start with <b>${t.txt}</b>: about ${t.min} minutes.</p><p>After that, take a short break and decide whether you want to continue.</p>`,
+      next: nextFor(t), follow: planFollow};
+  }
+  if ((m = /^Break down "(.+)"$/.exec(q))) {
+    var n2 = need('tasks', 'tasks'); if (n2) return n2;
+    var bt = all.filter(function (x) { return x.txt === m[1]; })[0];
+    if (!bt) return {body: html`<p>I couldn't find that task on today's list.</p>`, follow: planFollow};
+    if (!bt.breakdown) return {body: html`<p><b>${bt.txt}</b> is already small, about ${bt.min} minutes. Just start, it counts.</p>`, next: nextFor(bt), follow: ['I only have 15 minutes']};
+    return {body: html`<p>I split it into ${bt.breakdown.length} small steps in your task list. Step 1 alone is a win.</p>`,
+      effect: function () { A.tasks.update(bt.id, {split: true}); }, next: nextFor(Object.assign({}, bt, {split: true})), follow: ['I only have 15 minutes', 'Pick another']};
+  }
+  if (q === 'I only have 15 minutes') {
+    var n3 = need('tasks', 'tasks'); if (n3) return n3;
+    var fit = pend.map(nextFor).filter(function (x) { return x.min <= 15; }).sort(function (a, b) { return a.min - b.min; })[0];
+    if (!fit) return {body: html`<p>Nothing on the list fits in 15 minutes. Want me to break the biggest one down?</p>`, follow: planFollow};
+    var rest = pend.filter(function (x) { return x.id !== fit.id; })[0];
+    return {body: html`<p>Then do <b>${fit.txt}</b> (${fit.min} min).${rest ? html` <b>${rest.txt}</b> can wait until tomorrow.` : ''}</p>`, next: fit, follow: ['Pick another']};
+  }
+  if (q === 'Pick another') {
+    var n4 = need('tasks', 'tasks'); if (n4) return n4;
+    var o = pick(pend, ctx.energy, ctx.next && ctx.next.id);
+    if (!o) return {body: html`<p>That's the only task left. One thing at a time.</p>`, follow: planFollow};
+    return {body: html`<p>Okay: <b>${nextFor(o).txt}</b>, about ${nextFor(o).min} minutes.</p>`, next: nextFor(o), follow: planFollow};
+  }
+  if (q === 'Which habits were hardest this month?') {
+    var n5 = need('habits', 'habits'); if (n5) return n5;
+    var mo = A.month();
+    return {body: html`<p>Your most challenging habits were <b>${mo[0].name}</b> and <b>${mo[1].name}</b>. You reached the minimum on ${mo[0].hit} of ${mo[0].total} and ${mo[1].hit} of ${mo[1].total} days.</p>`,
+      card: {type: 'table', rows: mo}, follow: ['Show me by week', 'What helps me keep them?']};
+  }
+  if (q === 'Show me by week') {
+    var n6 = need('habits', 'habits'); if (n6) return n6;
+    var h = A.month()[0], wk = A.byWeek(h.id), top = Math.max.apply(null, wk.map(function (x) { return x.value; }));
+    return {body: html`<p>${h.name} peaked at ${top} days in a week. This week is still going.</p>`,
+      card: {type: 'chart', title: h.name + ', days at least at the minimum', data: wk, hi: wk.filter(function (x) { return x.value === top; }).map(function (x) { return x.label; })},
+      follow: ['Which habit should I make easier?', 'When do I get distracted most?']};
+  }
+  if (q === 'What helps me keep them?') {
+    var n7 = need('habits', 'habits') || need('tasks', 'tasks'); if (n7) return n7;
+    return {body: html`<p>On the days you kept your habits, you had usually crossed out one task before 9 am. Small early wins may help.</p>`, follow: ['Where do I start?', 'Which habit should I make easier?']};
+  }
+  if (q === 'Which habit should I make easier?') {
+    var n8 = need('habits', 'habits'); if (n8) return n8;
+    var sg = A.suggestions().filter(function (x) { return x.kind === 'lower'; })[0] || A.suggestions()[0];
+    if (!sg) return {body: html`<p>Your targets look right for now. Keep going.</p>`, follow: START};
+    return {body: html`<p><b>${sg.name}</b>: ${sg.title.charAt(0).toLowerCase() + sg.title.slice(1)} (${sg.when}). ${sg.text}</p>`,
+      link: {go: 'summary-habits', label: 'See the suggestion'}, follow: ['Where do I start?']};
+  }
+  if (q === 'When do I get distracted most?') {
+    var n9 = need('distractors', 'distractors'); if (n9) return n9;
+    return {body: html`<p>In the first 20 minutes of a study session. Social media is the most common pull: it showed up in 5 sessions this week.</p>`,
+      link: {go: 'summary-distractions', label: 'Open Distractions'}, follow: ['Where do I start?']};
+  }
+  if ((m = /^Why was (\w+) light\?$/.exec(q))) {
+    var n10 = need('habits', 'habits'); if (n10) return n10;
+    var w = A.week(param('date') || A.today), d = w.days.filter(function (x) { return x.label === m[1]; })[0];
+    if (!d || d.value === null) return {body: html`<p>${m[1]} hasn't happened yet this week.</p>`, follow: START};
+    var day = A.fmt(d.date, {weekday: 'long'});
+    return {body: html`<p>On ${day}, ${d.value} of ${w.tracked} habits reached the minimum, your lightest day that week. It may help to plan just the minimum on ${day}s, and it still counts.</p>`,
+      link: {go: 'summary', label: 'Back to Weekly summary'}, follow: ['Which habit should I make easier?']};
+  }
+  if (q === 'How many wishes did I check on time?') {
+    var n11 = need('wishes', 'caught wishes'); if (n11) return n11;
+    return {body: html`<p>5 of the 7 wishes you caught this week, at the time you picked.</p>`, link: {go: 'wish', label: 'Open Catch a wish'}, follow: START};
+  }
+  return {body: html`<p>I can plan your day from your tasks, or answer questions about your habits, distractors and caught wishes. Try one of these.</p>`, follow: START};
+}
+
+/* ---------- right column ---------- */
+function Tasks(p) {
+  var list = p.tasks;
+  return html`<${S.JournalPage} pattern="dash" title="Today, by priority">
+    <div style=${{display: 'grid', gap: '8px', marginBottom: '12px'}}>
+      <span style=${label}>How's your energy?</span>
+      <div class="sit-chiprow">${['Low', 'Ok', 'High'].map(function (e) { return html`<button key=${e} class=${'sit-chip' + (p.energy === e ? ' is-on' : '')} aria-pressed=${p.energy === e} onClick=${function () { p.onEnergy(e); }}>${e}</button>`; })}</div>
+    </div>
+    ${list.map(function (x) { return html`<div key=${x.id}>
+      <${S.CheckItem} checked=${x.c} priority=${x.p} onChange=${function (v) { A.tasks.update(x.id, {c: v}); }}>${x.txt}<//>
+      ${x.split && x.breakdown ? html`<div style=${{paddingLeft: '36px'}}>
+        <div style=${Object.assign({}, label, {display: 'flex', alignItems: 'center', gap: '6px', margin: '8px 0 2px'})}><${S.Doodle} kind="sparkle" tone="mustard" size=${14}/>Split into ${x.breakdown.length} small steps</div>
+        ${x.breakdown.map(function (st, i) { var dn = (x.stepsDone || [])[i]; return html`<${S.CheckItem} key=${st.txt} checked=${!!dn} onChange=${function (v) {
+          var a = (x.stepsDone || []).slice(); a[i] = v;
+          A.tasks.update(x.id, {stepsDone: a, c: x.breakdown.every(function (_, k) { return a[k]; })});
+        }}>${st.txt} (${st.min} min)<//>`; })}
+      </div>` : null}
+    </div>`; })}
+    <p style=${Object.assign({}, small, {margin: '14px 0 0'})}>The same list as Home. Crossing out here crosses out there.</p>
+    <div style=${{marginTop: '8px'}}><${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go('home'); }}>Go to Home<//></div>
+  <//>`;
+}
+function NextStep(p) {
+  var n = p.next, started = useState(false);
+  React.useEffect(function () { started[1](false); }, [n.id, n.step]);
+  function done() {
+    var t = A.tasks.all().filter(function (x) { return x.id === n.id; })[0];
+    if (!t) return;
+    if (n.step < 0) A.tasks.update(t.id, {c: true});
+    else { var a = (t.stepsDone || []).slice(); a[n.step] = true; A.tasks.update(t.id, {stepsDone: a, c: t.breakdown.every(function (_, k) { return a[k]; })}); }
+    p.onDone();
+  }
+  return html`<${S.ScallopCard} tone="butter">
+    <div style=${{display: 'flex', alignItems: 'center', gap: '8px'}}><${S.Doodle} kind="sparkle" tone="onsticky" size=${18}/><span style=${Object.assign({}, label, {color: 'var(--on-sticky)'})}>Suggested next step</span></div>
+    <div style=${{fontFamily: 'var(--font-display)', fontSize: '26px', lineHeight: '32px', margin: '8px 0 2px'}}>${n.txt}</div>
+    <div style=${{fontSize: '15px'}}>About ${n.min} minutes${n.of ? ' · step ' + (n.step + 1) + ' of ' + n.of : ''}</div>
+    <div style=${{display: 'flex', gap: '10px', marginTop: '14px', alignItems: 'center', flexWrap: 'wrap'}}>
+      ${started[0]
+        ? html`<${S.Button} variant="primary" onClick=${done}>✓ Done, cross it out<//><span style=${Object.assign({}, hand, {fontSize: '20px', color: 'var(--on-sticky)'})}>Go! It counts.</span>`
+        : html`<${S.Button} variant="primary" onClick=${function () { started[1](true); }}>I'll do it now<//>
+          <button class="sit-chip" style=${{borderColor: 'var(--on-sticky)', color: 'var(--on-sticky)', background: 'transparent'}} onClick=${p.onAnother}>Pick another</button>`}
+    </div>
+  <//>`;
+}
+function Scope(p) {
+  var sc = p.scope, on = A.scope.sources.filter(function (s) { return sc[s.key]; });
+  return html`<${S.InsightCard} icon="sparkle" tone="sky" title="What the helper can see"
+    action=${p.open
+      ? html`<div style=${{display: 'grid', gap: '2px'}}>
+          ${A.scope.sources.map(function (s) { return html`<${S.CheckItem} key=${s.key} checked=${!!sc[s.key]} onChange=${function (v) { A.scope.set(s.key, v); }}>${s.label} <span style=${small}>· ${s.note}</span><//>`; })}
+          <div style=${{marginTop: '8px'}}><${S.Button} variant="ghost" size="sm" onClick=${p.onToggle}>Done<//></div>
+        </div>`
+      : html`<${S.Button} variant="ghost" size="sm" onClick=${p.onToggle}>Manage what the helper can see<//>`}>
+    ${on.length ? on.map(function (s) { return s.label; }).join(', ') + '. Nothing from other apps.' : 'Nothing right now. Turn on a source so the helper can answer.'}
+  <//>`;
+}
+
+/* ---------- conversation ---------- */
+function Message(p) {
+  var m = p.m;
+  return html`<div>
+    <${S.ChatMessage} from=${m.from}>${m.body}<//>
+    ${m.card && m.card.type === 'table' ? html`<div style=${Object.assign({}, box, {marginLeft: '46px'})}>
+      <div style=${Object.assign({}, label, {display: 'flex', justifyContent: 'space-between', padding: '8px 0'})}><span>Habit</span><span>Last 30 days</span></div>
+      ${m.card.rows.map(function (r) { return html`<${S.ProgressRow} key=${r.id} label=${r.name} value=${r.hit} total=${r.total}/>`; })}
+    </div>` : null}
+    ${m.card && m.card.type === 'chart' ? html`<div style=${Object.assign({}, box, {marginLeft: '46px', padding: '14px 18px'})}>
+      <${S.BarChart} title=${m.card.title} max=${7} unit="Days" labelHead="Week" highlight=${m.card.hi} data=${m.card.data}/>
+    </div>` : null}
+    ${m.link ? html`<div style=${{marginLeft: '46px', marginTop: '4px'}}><${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go(m.link.go); }}>${m.link.label}<//></div>` : null}
+    ${m.manage ? html`<div style=${{marginLeft: '46px', marginTop: '4px'}}><${S.Button} variant="ghost" size="sm" onClick=${p.onManage}>Manage what the helper can see<//></div>` : null}
+  </div>`;
+}
+
+function App() {
+  var tasks = A.useStore(A.tasks), scope = A.useStore(A.scope);
+  var energy = useState('Low'), open = useState(false), next = useState(null);
+  var msgs = useState([{from: 'ai', body: html`<p>Hi Ana. I can plan your day from your tasks, or answer questions about your habits, focus and caught wishes.</p>`, follow: START}]);
+  var busy = useState(false);
+  function ask(q, base) {
+    var list = (base || msgs[0]).concat([{from: 'user', body: q}, {from: 'ai', body: html`<${S.Thinking}/>`}]);
+    msgs[1](list); busy[1](true);
+    setTimeout(function () {
+      var r = reply(q, {energy: energy[0], next: next[0]});
+      if (r.effect) r.effect();
+      if (r.next) next[1](r.next);
+      var a = list.slice(); a[a.length - 1] = Object.assign({from: 'ai'}, r);
+      msgs[1](a); busy[1](false);
+    }, 900);
+  }
+  // Arriving from another screen: ?q= sends that question (Home sends "Where do I start?").
+  React.useEffect(function () {
+    var q = param('q') || (param('mode') === 'plan' ? 'Where do I start?' : null);
+    if (q) ask(q, []);
+  }, []);
+  var last = msgs[0].filter(function (m) { return m.from === 'ai' && m.follow; }).slice(-1)[0];
+  var chips = busy[0] ? [] : (last ? last.follow : START);
+  // The next step disappears once its task (or step) is crossed out.
+  var nx = next[0], nt = nx && tasks.filter(function (t) { return t.id === nx.id; })[0];
+  var live = nx && nt && !nt.c && (nx.step < 0 || !(nt.stepsDone || [])[nx.step]) && scope.tasks;
+
+  return html`<${Shell} active="helper" seed=${52} h=${1020}>
+    <${Title} icon="sparkle" sub="Plan your day from your tasks, or ask about your habits, focus and caught wishes. The helper proposes, you decide.">Ask the helper<//>
+    <div style=${{display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: '32px', marginTop: '24px', alignItems: 'start'}}>
+      <${S.JournalPage} pattern="dot" binding="none">
+        <div style=${{minHeight: '460px'}} aria-live="polite">
+          ${msgs[0].map(function (m, i) { return html`<${Message} key=${i} m=${m} onManage=${function () { open[1](true); }}/>`; })}
+        </div>
+        <div style=${{display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '20px 0 14px', minHeight: '40px'}}>
+          ${chips.slice(0, 3).map(function (q) { return html`<${S.PromptChip} key=${q} icon=${q === 'Show me by week' ? 'chart' : 'sparkle'} onClick=${function () { ask(q); }}>${q}<//>`; })}
+        </div>
+        <${S.ChatComposer} placeholder="Plan something or ask a question…" onSend=${function (q) { ask(q); }}/>
+      <//>
+      <div style=${{display: 'grid', gap: '24px'}}>
+        ${live ? html`<${NextStep} next=${nx} onDone=${function () { next[1](null); }} onAnother=${function () { ask('Pick another'); }}/>` : null}
+        ${scope.tasks ? html`<${Tasks} tasks=${tasks} energy=${energy[0]} onEnergy=${energy[1]}/>` : null}
+        <${Scope} scope=${scope} open=${open[0]} onToggle=${function () { open[1](!open[0]); }}/>
+      </div>
+    </div>
+  <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+<button id="sit-theme" type="button" style="position:fixed;right:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);cursor:pointer">Dark mode</button>
+<a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);text-decoration:none">&larr; App flow</a>
+<script>
+(function(){var b=document.getElementById('sit-theme'),r=document.documentElement;
+function set(t){r.setAttribute('data-theme',t);b.textContent=t==='dark'?'Light mode':'Dark mode';try{localStorage.setItem('sit-theme',t)}catch(e){}}
+var s='light';try{s=localStorage.getItem('sit-theme')||'light'}catch(e){}set(s);
+b.onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};})();
+</script>
+</body>
+</html>

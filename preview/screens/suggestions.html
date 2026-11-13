@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><title>Suggestions · StayInTrackApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components/bundle.css">
+<script src="../vendor/react.production.min.js"></script>
+<script src="../vendor/react-dom.production.min.js"></script>
+<script src="../../design-system/components/bundle.js"></script>
+<script src="../flow.js"></script><style>html,body{margin:0;background:var(--paper)}</style></head>
+<body>
+<div id="root"></div>
+<script>
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.htm=e()}(this,function(){var n=function(e,t,u,s){var r;t[0]=0;for(var p=1;p<t.length;p++){var h=t[p++],o=t[p]?(t[0]|=h?1:2,u[t[p++]]):t[++p];3===h?s[0]=o:4===h?s[1]=Object.assign(s[1]||{},o):5===h?(s[1]=s[1]||{})[t[++p]]=o:6===h?s[1][t[++p]]+=o+"":h?(r=e.apply(o,n(e,o,u,["",null])),s.push(r),o[0]?t[0]|=2:(t[p-2]=0,t[p]=r)):s.push(o)}return s},e=new Map;return function(t){var u=e.get(this);return u||(u=new Map,e.set(this,u)),(u=n(this,u.get(t)||(u.set(t,u=function(n){for(var e,t,u=1,s="",r="",p=[0],h=function(n){1===u&&(n||(s=s.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?p.push(0,n,s):3===u&&(n||s)?(p.push(3,n,s),u=2):2===u&&"..."===s&&n?p.push(4,n,0):2===u&&s&&!n?p.push(5,0,!0,s):u>=5&&((s||!n&&5===u)&&(p.push(u,0,s,t),u=6),n&&(p.push(u,n,0,t),u=6)),s=""},o=0;o<n.length;o++){o&&(1===u&&h(),h(o));for(var f=0;f<n[o].length;f++)e=n[o][f],1===u?"<"===e?(h(),p=[p],u=3):s+=e:4===u?"--"===s&&">"===e?(u=1,s=""):s=e+s[0]:r?e===r?r="":s+=e:'"'===e||"'"===e?r=e:">"===e?(h(),u=1):u&&("="===e?(u=5,t=s,s=""):"/"===e&&(u<5||">"===n[o][f+1])?(h(),3===u&&(p=p[0]),u=p,(p=p[0]).push(2,0,u),u=0):" "===e||"\t"===e||"\n"===e||"\r"===e?(h(),u=2):s+=e),3===u&&"!--"===s&&(u=4,p=p[0])}return h(),p}(t)),u),arguments,[])).length>1?u:u[0]}});
+var S = window.StayInTrack, html = htm.bind(React.createElement), useState = React.useState;
+function Shell(p) {
+  return html`<div class="sit-root" style=${{minHeight: p.h + 'px'}}>
+    <${S.NavBar} active=${p.active} user="Ana" ...${SITFlow.nav}/>
+    <${S.DoodleField} seed=${p.seed} count=${15} style=${{minHeight: (p.h - 62) + 'px'}}>
+      <main style=${{maxWidth: '1180px', margin: '0 auto', padding: '36px 40px 56px'}}>${p.children}</main>
+    <//>
+  </div>`;
+}
+var sub = {margin: '10px 0 0', fontSize: '18px', lineHeight: '28px', color: 'var(--ink-muted)', maxWidth: '640px'};
+var label = {fontSize: '12px', lineHeight: '16px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--ink-muted)'};
+var hand = {fontFamily: 'var(--font-script)', fontSize: '24px', lineHeight: '28px'};
+
+var TIPS = [
+  'Set a daily calendar of the things that need doing, by priority.',
+  'Keep making the list, diligently, until it becomes a habit.',
+  'Turn those tasks into a checklist and put it somewhere easy to see.',
+  'Start small. You don\'t have to do it all at once.',
+  'Focus on one area. Start the next project only after finishing the first.',
+  'Do the most important tasks first, above all what can\'t wait for another day.',
+  'Cross out tasks that are done. Seeing it can motivate you to keep going.',
+  'Check your progress and give yourself a pat on the back for a job well done.'
+];
+var FAMILIAR = [
+  html`Remembering to <${S.Highlight}>water your plants<//> after they <${S.Highlight}>already died<//>.`,
+  html`The famous <${S.Highlight}>invasion of cups<//>, glasses and bottles on your desk.`,
+  html`Finding <${S.Highlight}>old food<//> at the back of your fridge.`,
+  html`Guessing <${S.Highlight}>how long<//> your clothes have waited in the washer.`,
+  html`Taking <${S.Highlight}>months to unpack<//> after moving.`
+];
+function App() {
+  var d = useState([true, false, true, false, false, true, false, false]);
+  var n = d[0].filter(Boolean).length;
+  function tog(i) { var a = d[0].slice(); a[i] = !a[i]; d[1](a); }
+  return html`<${Shell} active="suggestions" seed=${9} h=${1240}>
+    <${S.HandTitle} as="h1" size="lg">Some suggestions to keep in mind<//>
+    <p style=${sub}>Many of us struggle to keep home, work and to-dos in order. It is not a character flaw, and it can be handled. Pick the tips that fit you and add them to your routine.</p>
+    <div style=${{marginTop: '32px'}}>
+      <div style=${label}>Sound familiar?</div>
+      <div style=${{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '18px', marginTop: '12px'}}>
+        ${FAMILIAR.map(function (f, i) { return html`<${S.ScallopCard} key=${i}><p style=${{margin: 0, fontSize: '15px', lineHeight: '22px'}}>${f}</p><//>`; })}
+      </div>
+    </div>
+    <div style=${{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '44px'}}>
+      <${S.HandTitle} size="md" underline="blush">Eight suggestions<//>
+      <${S.Badge} tone="butter">${n} of 8 in my routine<//>
+    </div>
+    <div style=${{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px 28px', marginTop: '20px'}}>
+      ${TIPS.map(function (t, i) { return html`<${S.NumberedTip} key=${i} n=${i + 1} done=${d[0][i]} onToggle=${function () { tog(i); }}>${t}<//>`; })}
+    </div>
+    <div style=${{display: 'flex', justifyContent: 'center', marginTop: '44px'}}>
+      <${S.Blob} style=${{textAlign: 'center', maxWidth: '620px'}}>
+        <div style=${{fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: '34px'}}><span style=${{color: 'var(--ochre)'}}>I hope these methods help us move forward.</span> We're on this road together.</div>
+      <//>
+    </div>
+  <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+<button id="sit-theme" type="button" style="position:fixed;right:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);cursor:pointer">Dark mode</button>
+<a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);text-decoration:none">&larr; App flow</a>
+<script>
+(function(){var b=document.getElementById('sit-theme'),r=document.documentElement;
+function set(t){r.setAttribute('data-theme',t);b.textContent=t==='dark'?'Light mode':'Dark mode';try{localStorage.setItem('sit-theme',t)}catch(e){}}
+var s='light';try{s=localStorage.getItem('sit-theme')||'light'}catch(e){}set(s);
+b.onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};})();
+</script>
+</body>
+</html>

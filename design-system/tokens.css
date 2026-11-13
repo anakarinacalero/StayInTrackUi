@@ -1,0 +1,97 @@
+/* StayInTrackApp — generated from tokens.json */
+:root, [data-theme="light"] {
+  --paper: #f7f3ee;
+  --paper-raised: #ffffff;
+  --paper-sunk: #efe8df;
+  --ink: #2e2622;
+  --ink-muted: #6b5e56;
+  --on-ink: #f7f3ee;
+  --grid-line: #ddd5cb;
+  --rule: #2e2622;
+  --blush: #e9b4ae;
+  --blush-soft: #f6dcd8;
+  --rose: #bf736b;
+  --rose-text: #a24f49;
+  --mustard: #e9b663;
+  --ochre: #b67a2a;
+  --ochre-text: #8a5a12;
+  --tan: #d8bea7;
+  --teal: #1d5a66;
+  --highlight: #f9e79a;
+  --cover: #1f1b19;
+  --ivory: #f4ecd8;
+  --gold: #c9a14a;
+  --disc: #8f857d;
+  --sticky-butter: #f8e38a;
+  --sticky-rose: #f7c6cf;
+  --sticky-sky: #b7e3e6;
+  --sticky-sage: #cfdca0;
+  --on-sticky: #2e2622;
+  --done: #3f6b35;
+  --shadow-page: 0 1px 0 rgba(46,38,34,0.06), 0 10px 30px rgba(46,38,34,0.08);
+  --shadow-sticky: 0 8px 14px -6px rgba(46,38,34,0.25);
+  --shadow-pop: 0 12px 32px rgba(46,38,34,0.16);
+}
+[data-theme="dark"] {
+  --paper: #1f1b19;
+  --paper-raised: #2a2522;
+  --paper-sunk: #171412;
+  --ink: #f4ecd8;
+  --ink-muted: #bfb2a3;
+  --on-ink: #1f1b19;
+  --grid-line: #3a332e;
+  --rule: #bfb2a3;
+  --blush: #e9b4ae;
+  --blush-soft: #4a3532;
+  --rose: #e2a49d;
+  --rose-text: #f0bdb7;
+  --mustard: #e9b663;
+  --ochre: #e8b664;
+  --ochre-text: #f0c47a;
+  --tan: #7a6656;
+  --teal: #7cc4cf;
+  --highlight: #5c4c16;
+  --cover: #0f0d0c;
+  --ivory: #f4ecd8;
+  --gold: #c9a14a;
+  --disc: #6b645e;
+  --sticky-butter: #e6d27c;
+  --sticky-rose: #e7b3bd;
+  --sticky-sky: #a6d3d6;
+  --sticky-sage: #bccb8c;
+  --on-sticky: #2e2622;
+  --done: #a9cf8f;
+  --shadow-page: 0 1px 0 rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.45);
+  --shadow-sticky: 0 8px 14px -6px rgba(0,0,0,0.6);
+  --shadow-pop: 0 12px 32px rgba(0,0,0,0.6);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --grid-pitch: 20px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-blob: 48px;
+  --radius-pill: 999px;
+  --scallop: 9px;
+  --font-display: Sniglet, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-script: Caveat, "Segoe Print", cursive;
+  --font-body: Hind, "Segoe UI", system-ui, sans-serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 64px; line-height: 64px; font-weight: 400; letter-spacing: -0.5px; }
+.display-lg { font-family: var(--font-display); font-size: 44px; line-height: 48px; font-weight: 400; }
+.title { font-family: var(--font-display); font-size: 28px; line-height: 32px; font-weight: 400; }
+.numeral { font-family: var(--font-display); font-size: 64px; line-height: 60px; font-weight: 400; }
+.script-lg { font-family: var(--font-script); font-size: 34px; line-height: 38px; font-weight: 700; }
+.script { font-family: var(--font-script); font-size: 24px; line-height: 28px; font-weight: 500; }
+.body-lg { font-family: var(--font-body); font-size: 18px; line-height: 28px; font-weight: 400; }
+.body { font-family: var(--font-body); font-size: 16px; line-height: 24px; font-weight: 400; }
+.body-sm { font-family: var(--font-body); font-size: 14px; line-height: 20px; font-weight: 400; }
+.label { font-family: var(--font-body); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 1.2px; }

@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><title>Tools · Minimal tracker · StayInTrackApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components/bundle.css">
+<link rel="stylesheet" href="../../modules/habits/habits.css">
+<script src="../vendor/react.production.min.js"></script>
+<script src="../vendor/react-dom.production.min.js"></script>
+<script src="../../design-system/components/bundle.js"></script>
+<script src="../flow.js"></script>
+<script src="../../modules/habits/habits.js"></script>
+<!-- demo data shared with My habits, Habit and My week; replace with your API -->
+<script src="../../modules/habits/sample-data.js"></script>
+<script src="../ai-demo.js"></script>
+<style>
+html,body{margin:0;background:var(--paper)}
+.mt-grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:32px;margin-top:28px;align-items:start}
+.mt-today{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.mt-today .sit-chip{font-size:16px;line-height:22px;padding:10px 16px}
+.mt-today .sit-chip.is-on{background:var(--ink);color:var(--on-ink)}
+.mt-today .sit-chip.is-miss.is-on{background:var(--blush);color:var(--on-sticky)}
+.mt-row{border-radius:14px;padding:4px 8px;margin:0 -8px}
+.mt-row.is-today{background:var(--highlight);color:var(--on-sticky)}
+.mt-row.is-today .sit-habit-lvl{color:var(--on-sticky)}
+.mt-other{display:grid;grid-template-columns:1fr auto;gap:4px 12px;width:100%;padding:10px 4px;border:0;border-bottom:1px dashed var(--grid-line);background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.mt-other:hover{background:var(--blush-soft)}
+.mt-other:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+@media (max-width:860px){.mt-grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div id="root"></div>
+<script>
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.htm=e()}(this,function(){var n=function(e,t,u,s){var r;t[0]=0;for(var p=1;p<t.length;p++){var h=t[p++],o=t[p]?(t[0]|=h?1:2,u[t[p++]]):t[++p];3===h?s[0]=o:4===h?s[1]=Object.assign(s[1]||{},o):5===h?(s[1]=s[1]||{})[t[++p]]=o:6===h?s[1][t[++p]]+=o+"":h?(r=e.apply(o,n(e,o,u,["",null])),s.push(r),o[0]?t[0]|=2:(t[p-2]=0,t[p]=r)):s.push(o)}return s},e=new Map;return function(t){var u=e.get(this);return u||(u=new Map,e.set(this,u)),(u=n(this,u.get(t)||(u.set(t,u=function(n){for(var e,t,u=1,s="",r="",p=[0],h=function(n){1===u&&(n||(s=s.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?p.push(0,n,s):3===u&&(n||s)?(p.push(3,n,s),u=2):2===u&&"..."===s&&n?p.push(4,n,0):2===u&&s&&!n?p.push(5,0,!0,s):u>=5&&((s||!n&&5===u)&&(p.push(u,0,s,t),u=6),n&&(p.push(u,n,0,t),u=6)),s=""},o=0;o<n.length;o++){o&&(1===u&&h(),h(o));for(var f=0;f<n[o].length;f++)e=n[o][f],1===u?"<"===e?(h(),p=[p],u=3):s+=e:4===u?"--"===s&&">"===e?(u=1,s=""):s=e+s[0]:r?e===r?r="":s+=e:'"'===e||"'"===e?r=e:">"===e?(h(),u=1):u&&("="===e?(u=5,t=s,s=""):"/"===e&&(u<5||">"===n[o][f+1])?(h(),3===u&&(p=p[0]),u=p,(p=p[0]).push(2,0,u),u=0):" "===e||"\t"===e||"\n"===e||"\r"===e?(h(),u=2):s+=e),3===u&&"!--"===s&&(u=4,p=p[0])}return h(),p}(t)),u),arguments,[])).length>1?u:u[0]}});
+var S = window.StayInTrack, html = htm.bind(React.createElement), useState = React.useState, DATA = window.SIT_SAMPLE;
+var TODAY = DATA.today;
+var LEVEL = ['missed', 'min', 'ok', 'ideal'];
+var sub = {margin: '10px 0 0', fontSize: '18px', lineHeight: '28px', color: 'var(--ink-muted)', maxWidth: '640px'};
+var label = {fontSize: '12px', lineHeight: '16px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--ink-muted)'};
+var hand = {fontFamily: 'var(--font-script)', fontSize: '24px', lineHeight: '28px'};
+var small = {fontSize: '14px', lineHeight: '20px', color: 'var(--ink-muted)'};
+function go(url) { location.href = url; }
+function fmt(iso, o) { return S.parseDate(iso).toLocaleDateString('en-US', o); }
+function addDays(iso, n) { var d = S.parseDate(iso); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function param(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+
+/* ---------- data: sample habits + the habit just made in Create a habit (sessionStorage) ---------- */
+function loadData() {
+  if (param('empty') === '1') return {habits: [], sheets: {}};
+  // Sample data already includes the habits and sheets made in this session (see sample-data.js).
+  return {habits: DATA.habits.slice(), sheets: JSON.parse(JSON.stringify(DATA.sheets))};
+}
+function isRunning(s) { return !!s && s.startDate <= TODAY && TODAY <= s.endDate; }
+
+/* ---------- targets change "from today": past days keep the targets they had ----------
+ * sheet.targets          targets the sheet started with
+ * sheet.targetsHistory   [{from: 'YYYY-MM-DD', targets}] ascending; each entry rules from that day on
+ * Levels are never recalculated: a past "ok" stays "ok" with the numbers it had that day. */
+function targetsOn(sheet, date, fallback) {
+  var t = sheet.targets || fallback;
+  (sheet.targetsHistory || []).forEach(function (x) { if (x.from <= date) t = x.targets; });
+  return t;
+}
+function targetsError(t) {
+  var a = Number(t.min), b = Number(t.ok), c = Number(t.ideal);
+  if (!(a > 0) || !(b > 0) || !(c > 0)) return 'Fill in all three targets with numbers above 0.';
+  return a < b && b < c ? null : 'Each target should be bigger than the one before: min < ok < ideal.';
+}
+function daysBetween(a, b) { return Math.round((S.parseDate(b) - S.parseDate(a)) / 864e5); }
+var DEFAULT_NOTE = {text: 'The minimum counts. One minute is still a yes.', color: 'butter'};
+/* Note of the day: one note per day, in turn, counted from the day the habit was created. */
+function noteIndex(h, sheet, shift) {
+  var n = (h.notes || []).length;
+  if (!n) return -1;
+  var d = daysBetween(h.createdAt || sheet.startDate, TODAY) + shift;
+  return ((d % n) + n) % n;
+}
+function currentSheet(list) {
+  list = list || [];
+  return list.filter(isRunning)[0] || S.sortSheetsDesc(list)[0] || null;
+}
+
+function Shell(p) {
+  return html`<div class="sit-root" style=${{minHeight: '100vh'}}>
+    <${S.NavBar} active="tracker" user="Ana" ...${SITFlow.nav}/>
+    <${S.DoodleField} seed=${14} count=${15} style=${{minHeight: 'calc(100vh - 62px)'}}>
+      <main style=${{maxWidth: '1180px', margin: '0 auto', padding: '28px clamp(16px, 4vw, 40px) 64px'}}>${p.children}</main>
+    <//>
+  </div>`;
+}
+function Header() {
+  return html`<div style=${{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px 24px'}}>
+    <div>
+      <${S.HandTitle} as="h1" size="lg">Minimal tracker<//>
+      <p style=${sub}>Log today in one tap. The minimum still counts.</p>
+    </div>
+    <${S.Button} variant="secondary" onClick=${function () { go('my-habits-calendar.html'); }}>My habits →<//>
+  </div>`;
+}
+
+/* ---------- 5 · first time: no habits yet ---------- */
+function Empty() {
+  return html`<div style=${{display: 'flex', flexWrap: 'wrap', gap: '40px', alignItems: 'center', marginTop: '40px'}}>
+    <${S.StickyNote} color="butter" rotate=${-2} style=${{width: '220px', minHeight: '170px'}}>Your first habit goes here.<//>
+    <div style=${{maxWidth: '420px'}}>
+      <p style=${Object.assign({}, hand, {margin: '0 0 8px'})}>Pick one small thing you want to do every day.</p>
+      <p style=${Object.assign({}, small, {margin: '0 0 18px'})}>You'll set a minimum that still counts, an ok day and an ideal day. Then you log each day here in one tap.</p>
+      <${S.Button} variant="primary" size="lg" onClick=${function () { go('create-habit.html'); }}>Create your first habit<//>
+    </div>
+  </div>`;
+}
+
+/* ---------- 3 · today, one tap ---------- */
+function TodayLog(p) {
+  var h = p.habit, t = targetsOn(p.sheet, TODAY, h.targets), v = p.level;
+  var opts = [[1, 'min', t.min], [2, 'ok', t.ok], [3, 'ideal', t.ideal]];
+  var msg = v === null || v === undefined ? 'Even the minimum is a yes.'
+    : v === 0 ? 'That is fine. Tomorrow is a new bar.'
+    : v === 3 ? 'Ideal day! Pat on the back.' : 'Logged: ' + LEVEL[v] + '. See you tomorrow.';
+  // Hard-day moment: "Not today" brings up today's note right where the user is looking.
+  var hardDay = v === 0 && p.note ? html`<${S.StickyNote} color=${p.note.color} rotate=${-1} style=${{width: '100%', maxWidth: '360px', minHeight: '0', marginTop: '16px'}}>
+      <span style=${Object.assign({}, label, {display: 'block', marginBottom: '4px', color: 'inherit'})}>A note from you</span>${p.note.text}<//>` : null;
+  return html`<${S.ScallopCard} tone="paper">
+    <div style=${label}>Today · ${fmt(TODAY, {weekday: 'long', month: 'short', day: 'numeric'})}</div>
+    <div style=${{fontFamily: 'var(--font-display)', fontSize: '26px', lineHeight: '32px', marginTop: '4px'}}>How did ${h.name} go today?</div>
+    <div class="mt-today" role="radiogroup" aria-label=${'Log ' + h.name + ' for today'}>
+      ${opts.map(function (o) { return html`<button type="button" key=${o[0]} role="radio" aria-checked=${v === o[0]} class=${'sit-chip' + (v === o[0] ? ' is-on' : '')} onClick=${function () { p.onLog(o[0]); }}>${o[1]} · ${o[2]} ${h.unit}</button>`; })}
+      <button type="button" role="radio" aria-checked=${v === 0} class=${'sit-chip is-miss' + (v === 0 ? ' is-on' : '')} onClick=${function () { p.onLog(0); }}>Not today</button>
+    </div>
+    <p style=${Object.assign({}, hand, {margin: '14px 0 0'})} aria-live="polite">${msg}</p>
+    ${hardDay}
+  <//>`;
+}
+
+/* ---------- change targets, applied from today ---------- */
+/* when: 'today' (past days keep theirs) or 'next' (this sheet stays as it is; the next sheet starts with them).
+ * prefill: values proposed by the helper (Weekly summary · Habits). The user still confirms here. */
+function EditTargets(p) {
+  var cur = p.current, init = p.prefill || cur, f = useState({min: init.min, ok: init.ok, ideal: init.ideal}), v = f[0];
+  var when = useState(p.nextOnly ? 'next' : p.when || 'today'), next = when[0] === 'next';
+  var err = targetsError(v);
+  var same = Number(v.min) === cur.min && Number(v.ok) === cur.ok && Number(v.ideal) === cur.ideal;
+  function set(k) { return function (e) { var x = Object.assign({}, v); x[k] = e.target.value; f[1](x); }; }
+  return html`<div role="group" aria-label="Change targets" style=${{background: 'var(--paper-sunk)', borderRadius: '14px', padding: '16px', margin: '18px 0 4px'}}>
+    <div style=${label}>${next ? 'Targets for the next sheet' : 'Change targets · from today, ' + fmt(TODAY, {month: 'short', day: 'numeric'})}</div>
+    ${p.prefill ? html`<p style=${Object.assign({}, small, {margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '6px'})}><${S.Doodle} kind="sparkle" tone="mustard" size=${14}/>Suggested by the helper. Change anything before saving.</p>` : null}
+    ${p.nextOnly ? null : html`<div class="sit-chiprow" role="radiogroup" aria-label="When" style=${{marginTop: '10px'}}>
+      ${[['today', 'From today'], ['next', 'From the next sheet']].map(function (o) { return html`<button type="button" key=${o[0]} role="radio" aria-checked=${when[0] === o[0]} class=${'sit-chip' + (when[0] === o[0] ? ' is-on' : '')} onClick=${function () { when[1](o[0]); }}>${o[1]}</button>`; })}
+    </div>`}
+    <div style=${{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', marginTop: '10px'}}>
+      ${[['min', 'min'], ['ok', 'ok'], ['ideal', 'ideal']].map(function (k) { return html`<${S.TextField} key=${k[0]} label=${k[1] + ' (' + p.unit + ')'} type="number" inputMode="decimal" min="0" step="any" script=${true}
+        value=${v[k[0]]} onChange=${set(k[0])} aria-invalid=${!!err}/>`; })}
+    </div>
+    ${err ? html`<p role="alert" style=${{margin: '8px 0 0', fontSize: '14px', lineHeight: '20px', color: 'var(--rose-text)'}}><b>Check:</b> ${err}</p>` : null}
+    <p style=${Object.assign({}, small, {margin: '10px 0 0'})}>${next
+      ? 'This sheet keeps its targets. The next sheet you start uses the new ones.'
+      : 'Days before today keep their targets and what you logged. Today and the days ahead use the new ones, and so do your next sheets. If you already logged today, it keeps the same level.'}</p>
+    <div style=${{display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap'}}>
+      <${S.Button} variant="primary" size="sm" disabled=${!!err || (same && !next)} onClick=${function () { p.onSave({min: Number(v.min), ok: Number(v.ok), ideal: Number(v.ideal)}, when[0]); }}>${next ? 'Save for the next sheet' : 'Save from today'}<//>
+      <${S.Button} variant="ghost" size="sm" onClick=${p.onCancel}>Cancel<//>
+    </div>
+  </div>`;
+}
+function TargetsDivider(p) {
+  var t = p.targets;
+  return html`<div role="separator" style=${{display: 'flex', alignItems: 'center', gap: '10px', margin: '4px 0'}}>
+    <span style=${{flex: 1, borderTop: '2px dashed var(--grid-line)'}}></span>
+    <span style=${Object.assign({}, small, {fontWeight: 600})}>New targets from ${fmt(p.from, {month: 'short', day: 'numeric'})} · min ${t.min} · ok ${t.ok} · ideal ${t.ideal} ${p.unit}</span>
+    <span style=${{flex: 1, borderTop: '2px dashed var(--grid-line)'}}></span>
+  </div>`;
+}
+function NextTargets(p) {
+  var t = p.targets;
+  return html`<div style=${{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px'}}>
+    <${S.Badge} tone="sage">Next sheet · min ${t.min} · ok ${t.ok} · ideal ${t.ideal} ${p.unit}<//>
+    <${S.Button} variant="ghost" size="sm" onClick=${p.onUndo}>Undo<//>
+  </div>`;
+}
+function SheetEnded(p) {
+  var h = p.habit, sg = SITAI.suggestion(h.id), editing = useState(!!p.editInit), st = useState(null);
+  // The sheet hasn't started yet (habit created for a later date): nothing to log until then.
+  if (p.sheet.startDate > TODAY) return html`<${S.ScallopCard} tone="paper">
+    <div style=${label}>Not started yet</div>
+    <div style=${{fontFamily: 'var(--font-display)', fontSize: '24px', lineHeight: '30px', margin: '4px 0 6px'}}>${h.name} starts ${fmt(p.sheet.startDate, {weekday: 'long', month: 'short', day: 'numeric'})}</div>
+    <p style=${Object.assign({}, hand, {margin: 0})}>See you then. The minimum still counts.</p>
+  <//>`;
+  var cur = h.targets, nt = h.nextTargets;
+  // The helper's suggestion shows up right here, the moment the next sheet's targets are decided.
+  var tip = sg && !nt && !st[0] && !editing[0] ? html`<${S.InsightCard} icon="sparkle" tone=${sg.tone} title=${sg.title}
+      action=${html`<div style=${{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+        ${sg.proposal
+          ? html`<${S.Button} variant="primary" size="sm" onClick=${function () { p.onNextTargets(sg.proposal); }}>Use ${sg.proposal.min} · ${sg.proposal.ok} · ${sg.proposal.ideal} ${h.unit}<//>`
+          : html`<${S.Button} variant="primary" size="sm" onClick=${function () { st[1]('kept'); }}>✓ Keep them<//>`}
+        <${S.Button} variant="ghost" size="sm" onClick=${function () { editing[1](true); }}>Adjust<//>
+      </div>`}>${sg.text}<//>` : null;
+  return html`<${S.ScallopCard} tone="blush">
+    <div style=${label}>No sheet running today</div>
+    <div style=${{fontFamily: 'var(--font-display)', fontSize: '24px', lineHeight: '30px', margin: '4px 0 10px'}}>${h.name}'s last sheet ended ${fmt(p.sheet.endDate, {month: 'short', day: 'numeric'})}</div>
+    ${tip ? html`<div style=${{margin: '0 0 14px'}}>${tip}</div>` : null}
+    ${editing[0] ? html`<${EditTargets} current=${nt || cur} unit=${h.unit} nextOnly=${true} prefill=${p.prefill}
+      onCancel=${function () { editing[1](false); }} onSave=${function (t) { p.onNextTargets(t); editing[1](false); }}/>` : null}
+    ${nt ? html`<${NextTargets} targets=${nt} unit=${h.unit} onUndo=${function () { p.onNextTargets(null); }}/>` : null}
+    <div style=${{display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '12px', alignItems: 'center'}}>
+      <${S.Button} variant="secondary" size="sm" onClick=${function () {
+        // Replace with POST /api/habits/{id}/sheets  { startDate: today }. Uses the next-sheet targets, if any.
+        DATA.saveNewSheet(h.id, TODAY);
+        go('minimal-tracker.html?habit=' + encodeURIComponent(h.id));
+      }}>Start a new sheet today<//>
+      <span style=${small}>Targets ${(nt || cur).min} · ${(nt || cur).ok} · ${(nt || cur).ideal} ${h.unit}</span>
+    </div>
+  <//>`;
+}
+
+/* ---------- the tracker ---------- */
+function Tracker(p) {
+  var h = p.habit, sheet = p.sheet, t = targetsOn(sheet, TODAY, h.targets);
+  // ?edit=targets[&from=next&min=&ok=&ideal=] opens the editor, e.g. from Weekly summary · Habits.
+  var editing = useState(param('edit') === 'targets' && isRunning(sheet)), shift = useState(0);
+  var prefill = param('min') ? {min: Number(param('min')), ok: Number(param('ok')), ideal: Number(param('ideal'))} : null;
+  var todayDay = sheet.days.filter(function (d) { return d.date === TODAY; })[0];
+  var logged = sheet.days.filter(function (d) { return d.level !== null && d.level !== undefined; });
+  var hit = logged.filter(function (d) { return d.level >= 1; }).length;
+  var cnt = [1, 2, 3].map(function (l) { return logged.filter(function (d) { return d.level === l; }).length; });
+  var nNotes = (h.notes || []).length, ni = noteIndex(h, sheet, shift[0]);
+  var note = ni >= 0 ? h.notes[ni] : DEFAULT_NOTE;
+  var others = p.habits.filter(function (x) { return x.id !== h.id; });
+  function labsFor(tt) { return ['min · ' + tt.min + ' ' + h.unit, 'ok · ' + tt.ok + ' ' + h.unit, 'ideal · ' + tt.ideal + ' ' + h.unit]; }
+  var cuts = {};
+  (sheet.targetsHistory || []).forEach(function (x) { if (x.from > sheet.startDate) cuts[x.from] = x.targets; });
+
+  return html`<div class="mt-grid">
+    <div style=${{display: 'grid', gap: '28px'}}>
+      ${isRunning(sheet)
+        ? html`<${TodayLog} habit=${h} sheet=${sheet} note=${note} level=${todayDay ? todayDay.level : null} onLog=${function (n) { p.onLog(TODAY, n); }}/>`
+        : html`<${SheetEnded} habit=${h} sheet=${sheet} onNextTargets=${p.onNextTargets} prefill=${prefill} editInit=${param('edit') === 'targets'}/>`}
+
+      <${S.JournalPage} pattern="dash" title=${'Sheet · ' + S.formatRange(sheet.startDate, sheet.endDate)}>
+        <div style=${{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px 16px', marginTop: '-6px'}}>
+          <span style=${Object.assign({}, hand, {fontSize: '30px', lineHeight: '34px'})}>${h.name}</span>
+          <span style=${{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+            <span style=${small}>${(sheet.targetsHistory || []).length ? 'now ' : ''}min ${t.min} · ok ${t.ok} · ideal ${t.ideal} ${h.unit}</span>
+            ${isRunning(sheet) && !editing[0] ? html`<${S.Button} variant="ghost" size="sm" onClick=${function () { editing[1](true); }}>Change targets<//>` : null}
+          </span>
+        </div>
+        ${isRunning(sheet) && h.nextTargets && !editing[0] ? html`<${NextTargets} targets=${h.nextTargets} unit=${h.unit} onUndo=${function () { p.onNextTargets(null); }}/>` : null}
+        ${editing[0] ? html`<${EditTargets} current=${t} unit=${h.unit} prefill=${prefill} when=${param('from') === 'next' ? 'next' : 'today'} onCancel=${function () { editing[1](false); }}
+          onSave=${function (nt, when) { if (when === 'next') p.onNextTargets(nt); else p.onChangeTargets(nt); editing[1](false); }}/>` : null}
+        <div style=${Object.assign({}, label, {margin: '22px 0 10px'})}>Days · tap a bar to fix a past day</div>
+        <div style=${{display: 'grid', gap: '10px'}}>
+          ${sheet.days.map(function (d) {
+            var cut = cuts[d.date] ? html`<${TargetsDivider} from=${d.date} targets=${cuts[d.date]} unit=${h.unit}/>` : null;
+            if (d.date > TODAY) return html`<${React.Fragment} key=${d.date}>${cut}<div class="mt-row"><${S.SheetRow} day=${d}/></div><//>`;
+            var isToday = d.date === TODAY;
+            return html`<${React.Fragment} key=${d.date}>${cut}<div class=${'mt-row' + (isToday ? ' is-today' : '')}>
+              <${S.HabitRow} day=${S.parseDate(d.date).getDate()} value=${d.level || 0} labels=${labsFor(targetsOn(sheet, d.date, h.targets))} onChange=${function (n) { p.onLog(d.date, n); }}/>
+              ${isToday ? html`<span class="sit-sr">today</span>` : null}
+            </div><//>`;
+          })}
+        </div>
+        ${h.reasons && h.reasons.length ? html`<div style=${{marginTop: '26px'}}>
+          <div style=${label}>Why it matters to me</div>
+          <ul style=${{margin: '6px 0 0', paddingLeft: '20px', fontFamily: 'var(--font-script)', fontSize: '24px', lineHeight: '30px'}}>${h.reasons.map(function (r) { return html`<li key=${r}>${r}</li>`; })}</ul>
+        </div>` : null}
+        <div style=${{marginTop: '18px'}}>
+          <${S.Button} variant="ghost" size="sm" onClick=${function () { go('habit.html?id=' + encodeURIComponent(h.id)); }}>Edit habit · see all sheets<//>
+        </div>
+      <//>
+    </div>
+
+    <div style=${{display: 'grid', gap: '28px'}}>
+      <${S.ScallopCard} tone="blush">
+        <div style=${label}>This sheet</div>
+        <div style=${{fontFamily: 'var(--font-display)', fontSize: '44px', lineHeight: '48px', margin: '6px 0'}}>${hit}/${sheet.days.length} <span style=${{fontSize: '22px'}}>days</span></div>
+        <div style=${{fontSize: '14px', lineHeight: '20px'}}>reached at least the minimum${logged.length < sheet.days.length ? ' · ' + (sheet.days.length - logged.length) + ' to go' : ''}</div>
+        <div style=${{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '14px'}}>
+          ${['min', 'ok', 'ideal'].map(function (l, i) { return html`<div key=${l} style=${{background: 'var(--paper-raised)', borderRadius: '12px', padding: '8px'}}><div style=${{fontFamily: 'var(--font-display)', fontSize: '24px', textAlign: 'center'}}>${cnt[i]}</div><div style=${Object.assign({}, small, {textAlign: 'center'})}>${l}</div></div>`; })}
+        </div>
+      <//>
+      <div>
+        <div style=${Object.assign({}, label, {marginBottom: '10px'})}>Note of the day${nNotes > 1 ? ' · ' + (ni + 1) + ' of ' + nNotes : ''}</div>
+        <div aria-live="polite"><${S.StickyNote} color=${note.color} rotate=${2} style=${{width: '100%', minHeight: '0'}}>${note.text}<//></div>
+        <div style=${{display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px'}}>
+          ${nNotes > 1 ? html`<${S.Button} variant="ghost" size="sm" onClick=${function () { shift[1](shift[0] + 1); }}>Another note ↻<//>` : null}
+          <${S.Button} variant="ghost" size="sm" onClick=${function () { go('habit.html?id=' + encodeURIComponent(h.id)); }}>${nNotes ? 'See all ' + nNotes + ' notes →' : 'Add notes →'}<//>
+        </div>
+      </div>
+      <${S.JournalPage} binding="none" pattern="blank" style=${{padding: 0}}>
+        <div style=${label}>Other habits</div>
+        ${others.map(function (o) {
+          var s = currentSheet(p.sheets[o.id]);
+          var lg = s ? s.days.filter(function (d) { return d.level !== null && d.level !== undefined; }) : [];
+          var oh = lg.filter(function (d) { return d.level >= 1; }).length, tot = s ? s.days.length : 0;
+          return html`<button type="button" key=${o.id} class="mt-other" onClick=${function () { p.onSelect(o.id); }} aria-label=${'Track ' + o.name + ', ' + oh + ' of ' + tot + ' days'}>
+            <span style=${hand}>${o.name}</span><span style=${small}>${oh}/${tot}</span>
+            <span class="sit-bar" style=${{display: 'block', height: '10px', gridColumn: '1 / -1'}}><span class="sit-bar-fill" style=${{display: 'block', width: (tot ? oh / tot * 100 : 0) + '%'}}></span></span>
+          </button>`;
+        })}
+        <div style=${{marginTop: '14px'}}><${S.Button} variant="secondary" size="sm" onClick=${function () { go('create-habit.html'); }}>+ New habit<//></div>
+      <//>
+    </div>
+  </div>`;
+}
+
+function App() {
+  var st = useState(loadData), d = st[0];
+  var first = (d.habits.filter(function (h) { return isRunning(currentSheet(d.sheets[h.id])); })[0] || d.habits[0] || {}).id;
+  var asked = param('habit');
+  var sel = useState(asked && d.habits.some(function (h) { return h.id === asked; }) ? asked : first);
+  var habit = d.habits.filter(function (h) { return h.id === sel[0]; })[0];
+  var sheet = habit ? currentSheet(d.sheets[habit.id]) : null;
+
+  function select(id) {
+    sel[1](id);
+    try { history.replaceState(null, '', '?habit=' + encodeURIComponent(id)); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+  function log(date, level) {
+    // Replace with your API, e.g. PUT /api/habits/{id}/sheets/{sheetId}/days/{date}  { level }
+    st[1](function (x) {
+      var sheets = Object.assign({}, x.sheets);
+      sheets[habit.id] = sheets[habit.id].map(function (s) {
+        return s.id !== sheet.id ? s : Object.assign({}, s, {days: s.days.map(function (dd) { return dd.date === date ? {date: dd.date, level: level} : dd; })});
+      });
+      return {habits: x.habits, sheets: sheets};
+    });
+  }
+  function changeTargets(nt) {
+    // Replace with your API, e.g. PUT /api/habits/{id}/targets  { targets, from: today }
+    // Past days keep their targets; today, the rest of this sheet and the next sheets use the new ones.
+    st[1](function (x) {
+      var sheets = Object.assign({}, x.sheets);
+      sheets[habit.id] = sheets[habit.id].map(function (s) {
+        if (s.id !== sheet.id) return s;
+        if (TODAY === s.startDate) return Object.assign({}, s, {targets: nt, targetsHistory: []});
+        var hist = (s.targetsHistory || []).filter(function (e) { return e.from !== TODAY; }).concat([{from: TODAY, targets: nt}]);
+        return Object.assign({}, s, {targetsHistory: hist});
+      });
+      var habits = x.habits.map(function (hh) { return hh.id === habit.id ? Object.assign({}, hh, {targets: nt}) : hh; });
+      return {habits: habits, sheets: sheets};
+    });
+  }
+
+  function nextTargets(nt) {
+    // Replace with PUT /api/habits/{id}/targets  { targets, from: "next-sheet" }. null clears it.
+    DATA.saveNextTargets(habit.id, nt);
+    st[1](function (x) { return {habits: x.habits.map(function (hh) { return hh.id === habit.id ? Object.assign({}, hh, {nextTargets: nt}) : hh; }), sheets: x.sheets}; });
+  }
+
+  return html`<${Shell}>
+    <${Header}/>
+    ${!habit ? html`<${Empty}/>`
+      : !sheet ? html`<p style=${sub}>${habit.name} has no sheets yet.</p>`
+      : html`<${Tracker} key=${habit.id} habit=${habit} sheet=${sheet} habits=${d.habits} sheets=${d.sheets} onLog=${log} onChangeTargets=${changeTargets} onNextTargets=${nextTargets} onSelect=${select}/>`}
+  <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+<button id="sit-theme" type="button" style="position:fixed;right:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);cursor:pointer">Dark mode</button>
+<a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);text-decoration:none">&larr; App flow</a>
+<script>
+(function(){var b=document.getElementById('sit-theme'),r=document.documentElement;
+function set(t){r.setAttribute('data-theme',t);b.textContent=t==='dark'?'Light mode':'Dark mode';try{localStorage.setItem('sit-theme',t)}catch(e){}}
+var s='light';try{s=localStorage.getItem('sit-theme')||'light'}catch(e){}set(s);
+b.onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};})();
+</script>
+</body>
+</html>

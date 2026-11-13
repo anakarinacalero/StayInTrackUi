@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><title>AI helper · Weekly summary · StayInTrackApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components/bundle.css">
+<script src="../vendor/react.production.min.js"></script>
+<script src="../vendor/react-dom.production.min.js"></script>
+<script src="../../design-system/components/bundle.js"></script>
+<script src="../flow.js"></script>
+<!-- demo data shared with Home and the tracker; replace with your API -->
+<script src="../../modules/habits/sample-data.js"></script>
+<script src="../ai-demo.js"></script><style>html,body{margin:0;background:var(--paper)}</style></head>
+<body>
+<div id="root"></div>
+<script>
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.htm=e()}(this,function(){var n=function(e,t,u,s){var r;t[0]=0;for(var p=1;p<t.length;p++){var h=t[p++],o=t[p]?(t[0]|=h?1:2,u[t[p++]]):t[++p];3===h?s[0]=o:4===h?s[1]=Object.assign(s[1]||{},o):5===h?(s[1]=s[1]||{})[t[++p]]=o:6===h?s[1][t[++p]]+=o+"":h?(r=e.apply(o,n(e,o,u,["",null])),s.push(r),o[0]?t[0]|=2:(t[p-2]=0,t[p]=r)):s.push(o)}return s},e=new Map;return function(t){var u=e.get(this);return u||(u=new Map,e.set(this,u)),(u=n(this,u.get(t)||(u.set(t,u=function(n){for(var e,t,u=1,s="",r="",p=[0],h=function(n){1===u&&(n||(s=s.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?p.push(0,n,s):3===u&&(n||s)?(p.push(3,n,s),u=2):2===u&&"..."===s&&n?p.push(4,n,0):2===u&&s&&!n?p.push(5,0,!0,s):u>=5&&((s||!n&&5===u)&&(p.push(u,0,s,t),u=6),n&&(p.push(u,n,0,t),u=6)),s=""},o=0;o<n.length;o++){o&&(1===u&&h(),h(o));for(var f=0;f<n[o].length;f++)e=n[o][f],1===u?"<"===e?(h(),p=[p],u=3):s+=e:4===u?"--"===s&&">"===e?(u=1,s=""):s=e+s[0]:r?e===r?r="":s+=e:'"'===e||"'"===e?r=e:">"===e?(h(),u=1):u&&("="===e?(u=5,t=s,s=""):"/"===e&&(u<5||">"===n[o][f+1])?(h(),3===u&&(p=p[0]),u=p,(p=p[0]).push(2,0,u),u=0):" "===e||"\t"===e||"\n"===e||"\r"===e?(h(),u=2):s+=e),3===u&&"!--"===s&&(u=4,p=p[0])}return h(),p}(t)),u),arguments,[])).length>1?u:u[0]}});
+var S = window.StayInTrack, html = htm.bind(React.createElement), useState = React.useState, A = window.SITAI;
+function Shell(p) {
+  return html`<div class="sit-root" style=${{minHeight: p.h + 'px'}}>
+    <${S.NavBar} active=${p.active} user="Ana" ...${SITFlow.nav}/>
+    <${S.DoodleField} seed=${p.seed} count=${15} style=${{minHeight: (p.h - 62) + 'px'}}>
+      <main style=${{maxWidth: '1180px', margin: '0 auto', padding: '36px 40px 56px'}}>${p.children}</main>
+    <//>
+  </div>`;
+}
+var sub = {margin: '10px 0 0', fontSize: '18px', lineHeight: '28px', color: 'var(--ink-muted)', maxWidth: '640px'};
+var label = {fontSize: '12px', lineHeight: '16px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--ink-muted)'};
+var hand = {fontFamily: 'var(--font-script)', fontSize: '24px', lineHeight: '28px'};
+var small = {fontSize: '14px', lineHeight: '20px', color: 'var(--ink-muted)'};
+
+function Title(p) {
+  return html`<div style=${{display: 'flex', alignItems: 'flex-start', gap: '14px'}}>
+    <span style=${{marginTop: '6px'}}><${S.Doodle} kind=${p.icon} tone=${p.tone || 'mustard'} size=${34}/></span>
+    <div><${S.HandTitle} as="h1" size="lg">${p.children}<//><p style=${sub}>${p.sub}</p></div>
+  </div>`;
+}
+function param(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+// Questions the summary can't answer on its own go to the helper with the question already sent.
+function ask(q, date) { SITFlow.go('helper.html?q=' + encodeURIComponent(q) + (date ? '&date=' + date : '')); }
+function chips(list, on, set) {
+  return html`<div class="sit-chiprow">${list.map(function (r) { return html`<button key=${r} class=${'sit-chip' + (on === r ? ' is-on' : '')} aria-pressed=${on === r} onClick=${function () { set(r); }}>${r}</button>`; })}</div>`;
+}
+
+/* ---------- Overview: habit numbers come from the tracker sheets; tasks, focus and wishes are demo numbers ---------- */
+function Overview(p) {
+  var range = useState(param('date') && A.weekStart(param('date')) !== A.weekStart(A.today) ? 'Pick' : 'This week');
+  var ws = range[0] === 'Last week' ? A.addDays(A.weekStart(A.today), -7) : range[0] === 'Pick' ? A.weekStart(param('date')) : A.weekStart(A.today);
+  var month = range[0] === 'Last 30 days';
+  var w = A.week(ws), mo = A.month();
+  var weeks = [3, 2, 1, 0].map(function (k) { var x = A.week(A.addDays(A.weekStart(A.today), -7 * k)); return {label: k ? 'Wk of ' + A.fmt(x.start, {month: 'short', day: 'numeric'}) : 'This week', value: x.checkins}; });
+  var data = month ? weeks : w.days.map(function (d) { return {label: d.label, value: d.value || 0}; });
+  var best = month ? [] : w.best.map(function (d) { return d.label; });
+  var soFar = !month && w.days.some(function (d) { return d.value === null; });
+  var kept = month ? mo.filter(function (x) { return x.rate > 0.5; }).length : w.kept, of = month ? mo.length : w.tracked;
+  var demo = month ? ['96', '120', '34', '18', '25', '19'] : ['23', '30', '9', '5', '7', '5'];
+  var light = w.lightest, light2 = light ? A.fmt(light.date, {weekday: 'long'}) : '';
+  return html`<div>
+    <div style=${{display: 'flex', flexWrap: 'wrap', gap: '8px 12px', alignItems: 'center'}}>
+      ${chips(['This week', 'Last week', 'Last 30 days'], range[0], range[1])}
+      <span style=${small}>${month ? A.range(A.addDays(A.today, -29), A.today) : A.range(w.start, w.end)}${soFar ? ' · so far' : ''}</span>
+    </div>
+    <div style=${{display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: '20px', marginTop: '20px'}}>
+      <${S.StatTile} tone="sage" icon="sprout" label=${month ? 'Your month at a glance' : 'Your week at a glance'} value=${kept + ' of ' + of} note="habits kept on most days"/>
+      <${S.StatTile} label="Tasks crossed out" value=${demo[0]} note=${'of ' + demo[1] + ' planned'}/>
+      <${S.StatTile} label="Focus sessions" value=${demo[2]} note=${demo[3] + ' with social media'}/>
+      <${S.StatTile} label="Wishes caught" value=${demo[4]} note=${demo[5] + ' checked on time'}/>
+    </div>
+    <div style=${{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '28px', marginTop: '28px', alignItems: 'start'}}>
+      <div style=${{display: 'grid', gap: '14px'}}>
+        <${S.JournalPage} pattern="blank" binding="none">
+          <${S.BarChart} title=${month ? 'Habit check-ins per week' : 'Habits at least at the minimum, per day'} max=${month ? undefined : Math.max(4, of)} labelHead=${month ? 'Week' : 'Day'} highlight=${best} data=${data}/>
+        <//>
+        <div style=${{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+          <span style=${Object.assign({}, label, {alignSelf: 'center', marginRight: '4px'})}>Go deeper</span>
+          <${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go('week.html?date=' + w.start); }}>Habits day by day<//>
+          <${S.Button} variant="ghost" size="sm" onClick=${function () { p.onTab('Distractions'); }}>Focus sessions<//>
+          <${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go('wish'); }}>Caught wishes<//>
+        </div>
+      </div>
+      <div style=${{display: 'grid', gap: '20px'}}>
+        ${month
+          ? html`<${S.InsightCard} icon="bulb" tone="butter" title=${'Steadiest: ' + mo[mo.length - 1].name}>${mo[mo.length - 1].hit} of ${mo[mo.length - 1].total} days at least at the minimum. ${mo[0].name} was the hardest, ${mo[0].hit} of ${mo[0].total}.<//>`
+          : html`<${S.InsightCard} icon="bulb" tone="butter" title=${'Most check-ins: ' + best.join(' and ')}>${best.length > 1 ? 'Those are good days' : 'That is a good day'} to schedule the harder habits.<//>`}
+        ${!month && light ? html`<${S.InsightCard} icon="calendar" tone="sky" title=${light2 + ' was your lightest day'}>Plan just the minimum on ${light2}s, and it still counts.<//>` : null}
+        <${S.InsightCard} icon="sprout" tone="sage" title="Habit suggestions are ready" action=${html`<${S.Button} variant="soft" size="sm" onClick=${function () { p.onTab('Habits'); }}>See them<//>`}>${A.suggestions().length} habits have a suggestion from their last sheet.<//>
+        <div style=${{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
+          ${!month && light ? html`<${S.PromptChip} onClick=${function () { ask('Why was ' + light.label + ' light?', w.start); }}>Why was ${light.label} light?<//>` : null}
+          <${S.PromptChip} onClick=${function () { ask('What helps me keep them?'); }}>What helps me keep them?<//>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Distractions (was Distraction patterns): reads distractor tags per focus session ---------- */
+var SESS = [{label: 'Session 1', value: 1}, {label: 'Session 2', value: 2}, {label: 'Session 3', value: 1}, {label: 'Session 4', value: 2}, {label: 'Session 5', value: 1}];
+var STRATS = ['Phone in another room for 25 min', 'Catch a wish when the urge hits', 'Mute notifications until noon'];
+function Distractions() {
+  var pick = useState(0), on = useState(false);
+  return html`<div>
+    <${S.InsightCard} icon="phone" tone="rose" title="Social media showed up in 5 study sessions">Every session this week, most often in the first 20 minutes.<//>
+    <div style=${{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '28px', marginTop: '28px', alignItems: 'start'}}>
+      <div style=${{display: 'grid', gap: '28px'}}>
+        <${S.JournalPage} pattern="blank" binding="none">
+          <${S.LineChart} title="Social media occurrences by study session" max=${3} data=${SESS}/>
+        <//>
+        <${S.JournalPage} pattern="blank" binding="none" title="Top distractors this week">
+          <${S.ProgressRow} label="Social media" value=${5} total=${5} unit="sessions"/>
+          <${S.ProgressRow} label="Other pending tasks" value=${3} total=${5} unit="sessions"/>
+          <${S.ProgressRow} label="Street noise" value=${2} total=${5} unit="sessions"/>
+        <//>
+      </div>
+      <div style=${{display: 'grid', gap: '24px'}}>
+        <${S.InsightCard} icon="bulb" tone="sky" title="It may be interrupting your focus.">Sessions with social media were 12 minutes shorter on average.<//>
+        <${S.ScallopCard}>
+          <div style=${{fontFamily: 'var(--font-display)', fontSize: '24px', lineHeight: '30px'}}>Pick a focus strategy</div>
+          <div role="radiogroup" style=${{display: 'grid', gap: '8px', margin: '14px 0 18px'}}>
+            ${STRATS.map(function (s, i) { return html`<button key=${s} role="radio" aria-checked=${pick[0] === i} class=${'sit-chip' + (pick[0] === i ? ' is-on' : '')} style=${{textAlign: 'left', borderRadius: '12px', padding: '10px 14px', fontSize: '15px'}} onClick=${function () { pick[1](i); on[1](false); }}>${s}</button>`; })}
+          </div>
+          ${on[0]
+            ? html`<div style=${{display: 'grid', gap: '10px', justifyItems: 'start'}}>
+                <p style=${Object.assign({}, hand, {margin: 0})}>Done! I'll remind you at your next study session.</p>
+                ${pick[0] === 1 ? html`<${S.Button} variant="soft" size="sm" onClick=${function () { SITFlow.go('wish'); }}>Open Catch a wish<//>` : null}
+              </div>`
+            : html`<${S.Button} variant="primary" size="lg" style=${{width: '100%'}} onClick=${function () { on[1](true); }}><${S.Doodle} kind="target" tone="onink" size=${18}/>Try a focus strategy<//>`}
+        <//>
+        <${S.Button} variant="ghost" onClick=${function () { SITFlow.go('distractors'); }}>Open my distractors list<//>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Habits (was Habit suggestions): one proposal per habit, from its sheet. Applying opens the tracker's own editor. ---------- */
+function t3(t, u) { return t.min + ' · ' + t.ok + ' · ' + t.ideal + ' ' + u; }
+function Habits() {
+  var list = A.suggestions(), st = useState({});
+  function set(k, v) { var o = Object.assign({}, st[0]); o[k] = v; st[1](o); }
+  if (!list.length) return html`<p style=${sub}>No suggestions right now. Your targets look right, keep going.</p>`;
+  var lead = list[0], rest = list.slice(1, 4);
+  function actions(sg, size) {
+    var s = st[0][sg.habitId], h = A.habit(sg.habitId);
+    if (h && h.nextTargets) return html`<div style=${{display: 'grid', gap: '6px', justifyItems: 'start'}}><${S.Badge} tone="sage">Next sheet: ${t3(h.nextTargets, sg.unit)}<//><${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go(A.adjustUrl(sg, h.nextTargets)); }}>Change in the tracker<//></div>`;
+    if (s) return html`<div style=${{display: 'flex', gap: '8px', alignItems: 'center'}}><${S.Badge} tone=${s === 'kept' ? 'sage' : 'neutral'}>${s === 'kept' ? 'Kept' : 'Skipped'}<//><${S.Button} variant="ghost" size="sm" onClick=${function () { set(sg.habitId, null); }}>Undo<//></div>`;
+    return html`<div style=${{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+      ${sg.proposal
+        ? html`<${S.Button} variant=${size ? 'primary' : 'soft'} size=${size || 'sm'} onClick=${function () { SITFlow.go(A.adjustUrl(sg)); }}>Apply from the next sheet<//>
+          <${S.Button} variant="ghost" size=${size || 'sm'} onClick=${function () { set(sg.habitId, 'skip'); }}>Not now<//>`
+        : html`<${S.Button} variant=${size ? 'primary' : 'soft'} size=${size || 'sm'} onClick=${function () { set(sg.habitId, 'kept'); }}>✓ Keep it<//>
+          <${S.Button} variant="ghost" size=${size || 'sm'} onClick=${function () { SITFlow.go(A.adjustUrl(sg, sg.targets)); }}>Adjust targets<//>`}
+    </div>`;
+  }
+  return html`<div>
+    <div style=${{display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '32px', alignItems: 'start'}}>
+      <div style=${{display: 'grid', gap: '22px'}}>
+        <${S.InsightCard} icon=${lead.icon} tone=${lead.tone} title=${lead.title}>${lead.name}, ${lead.when} (${A.range(lead.sheet.startDate, lead.sheet.endDate)}). Targets ${t3(lead.targets, lead.unit)}.<//>
+        <div style=${{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+          <${S.StatTile} tone="sage" icon="sprout" label="At least the minimum" value=${lead.minPlus} unit="days" note=${'of ' + lead.days}/>
+          <${S.StatTile} tone="rose" icon="target" label="Ideal" value=${lead.ideal} unit="days" note=${'of ' + lead.days}/>
+        </div>
+      </div>
+      <div style=${{display: 'grid', gap: '16px', justifyItems: 'start'}}>
+        <${S.InsightCard} icon="calendar" tone="sky" title=${lead.ask} action=${actions(lead, 'md')}>
+          ${lead.proposal ? 'New targets: ' + t3(lead.proposal, lead.unit) + '. You confirm them in the tracker.' : 'The minimum counts. The ideal is a bonus, not a must.'}
+        <//>
+        <${S.Button} variant="ghost" size="sm" onClick=${function () { SITFlow.go('minimal-tracker.html?habit=' + lead.habitId); }}>See the ${lead.name} sheet<//>
+      </div>
+    </div>
+    ${rest.length ? html`<div style=${{marginTop: '36px'}}>
+      <${S.HandTitle} size="md" underline="blush">More suggestions<//>
+      <div style=${{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '22px', marginTop: '18px'}}>
+        ${rest.map(function (sg) { return html`<${S.ScallopCard} key=${sg.habitId}>
+          <div style=${{display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between'}}>
+            <span style=${Object.assign({}, hand, {fontSize: '26px'})}>${sg.name}</span><${S.Doodle} kind="sparkle" tone="mustard" size=${16}/>
+          </div>
+          <p style=${{margin: '6px 0 4px', fontSize: '15px', lineHeight: '22px', fontWeight: 600}}>${sg.title}</p>
+          <p style=${{margin: '0 0 12px', fontSize: '15px', lineHeight: '22px'}}>${sg.text}</p>
+          ${actions(sg)}
+        <//>`; })}
+      </div>
+    </div>` : null}
+  </div>`;
+}
+
+var TABS = {Overview: 'overview', Distractions: 'distractions', Habits: 'habits'};
+function App() {
+  var first = Object.keys(TABS).filter(function (k) { return TABS[k] === param('tab'); })[0] || 'Overview';
+  var tab = useState(first);
+  function show(t) {
+    tab[1](t);
+    try { var u = new URLSearchParams(location.search); if (t === 'Overview') u.delete('tab'); else u.set('tab', TABS[t]); history.replaceState(null, '', '?' + u.toString()); } catch (e) {}
+  }
+  return html`<${Shell} active="summary" seed=${61} h=${1040}>
+    <${Title} icon="chart" tone="ink" sub="Your habits, focus and caught wishes, with one suggestion at a time.">Weekly summary<//>
+    <div role="tablist" aria-label="Summary sections" style=${{display: 'flex', gap: '28px', marginTop: '22px', marginBottom: '24px', borderBottom: '2px solid var(--rule)'}}>
+      ${Object.keys(TABS).map(function (t) { var on = tab[0] === t; return html`<button key=${t} role="tab" aria-selected=${on} class="sit-tab-line" onClick=${function () { show(t); }}
+        style=${{background: 'transparent', border: 0, borderBottom: '4px solid ' + (on ? 'var(--mustard)' : 'transparent'), marginBottom: '-2px', padding: '8px 2px', font: '600 18px/24px var(--font-body)', color: on ? 'var(--ink)' : 'var(--ink-muted)', cursor: 'pointer'}}>${t}</button>`; })}
+    </div>
+    <div role="tabpanel" aria-label=${tab[0]}>
+      ${tab[0] === 'Overview' ? html`<${Overview} onTab=${show}/>` : tab[0] === 'Distractions' ? html`<${Distractions}/>` : html`<${Habits}/>`}
+    </div>
+  <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+<button id="sit-theme" type="button" style="position:fixed;right:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);cursor:pointer">Dark mode</button>
+<a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:99;font:600 13px/18px Hind,system-ui,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-raised);color:var(--ink);text-decoration:none">&larr; App flow</a>
+<script>
+(function(){var b=document.getElementById('sit-theme'),r=document.documentElement;
+function set(t){r.setAttribute('data-theme',t);b.textContent=t==='dark'?'Light mode':'Dark mode';try{localStorage.setItem('sit-theme',t)}catch(e){}}
+var s='light';try{s=localStorage.getItem('sit-theme')||'light'}catch(e){}set(s);
+b.onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};})();
+</script>
+</body>
+</html>

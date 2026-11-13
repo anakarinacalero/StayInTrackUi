@@ -1,0 +1,35 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8">
+<style>
+html,body{margin:0;background:var(--paper)}
+.wrap{position:relative;width:960px;height:288px;overflow:hidden;background:var(--paper)}
+.band{position:absolute;left:0;top:0}
+.cov{fill:var(--cover)} .dot{fill:var(--ivory)}
+.blush{fill:var(--blush)} .mustard{fill:var(--mustard)} .tan{fill:var(--tan)}
+[data-theme="dark"] .cov{fill:var(--ink)} [data-theme="dark"] .dot{fill:var(--paper)}
+.name{position:absolute;left:40px;top:148px;margin:0;font-family:var(--font-display);font-weight:400;font-size:64px;line-height:60px;color:var(--ink);letter-spacing:-0.5px}
+.tag{position:absolute;left:42px;top:220px;margin:0;font-family:var(--font-body);font-size:14px;line-height:20px;color:var(--ink-muted);max-width:440px}
+</style></head>
+<body>
+<div class="wrap">
+<svg class="band" viewBox="0 0 960 124" width="960" height="124" aria-hidden="true">
+<!--
+blocks: cover 384x112 (dots: ivory) · blush 288x112 · mustard 160x88 (radius-lg) · tan 96x64 (radius-md) on paper
+arrangement: a strip of unequal bands across the top, bleeding off the top edge, cover slab first like the notebook it comes from
+pattern: polka dots on the cover slab, pitch space-6 (32px), r 3; the cover ends in a scalloped edge of 24px discs (radius-md) — the Happy Planner black dot cover with scalloped edge
+scales: space-6 pitch, space-5 scallop diameter, radius-lg and radius-md corners
+-->
+<rect class="cov" x="0" y="0" width="384" height="112"/>
+<circle class="cov" cx="12" cy="112" r="12"/><circle class="cov" cx="36" cy="112" r="12"/><circle class="cov" cx="60" cy="112" r="12"/><circle class="cov" cx="84" cy="112" r="12"/><circle class="cov" cx="108" cy="112" r="12"/><circle class="cov" cx="132" cy="112" r="12"/><circle class="cov" cx="156" cy="112" r="12"/><circle class="cov" cx="180" cy="112" r="12"/><circle class="cov" cx="204" cy="112" r="12"/><circle class="cov" cx="228" cy="112" r="12"/><circle class="cov" cx="252" cy="112" r="12"/><circle class="cov" cx="276" cy="112" r="12"/><circle class="cov" cx="300" cy="112" r="12"/><circle class="cov" cx="324" cy="112" r="12"/><circle class="cov" cx="348" cy="112" r="12"/><circle class="cov" cx="372" cy="112" r="12"/>
+<circle class="dot" cx="16" cy="20" r="3"/><circle class="dot" cx="48" cy="20" r="3"/><circle class="dot" cx="80" cy="20" r="3"/><circle class="dot" cx="112" cy="20" r="3"/><circle class="dot" cx="144" cy="20" r="3"/><circle class="dot" cx="176" cy="20" r="3"/><circle class="dot" cx="208" cy="20" r="3"/><circle class="dot" cx="240" cy="20" r="3"/><circle class="dot" cx="272" cy="20" r="3"/><circle class="dot" cx="304" cy="20" r="3"/><circle class="dot" cx="336" cy="20" r="3"/><circle class="dot" cx="368" cy="20" r="3"/><circle class="dot" cx="32" cy="52" r="3"/><circle class="dot" cx="64" cy="52" r="3"/><circle class="dot" cx="96" cy="52" r="3"/><circle class="dot" cx="128" cy="52" r="3"/><circle class="dot" cx="160" cy="52" r="3"/><circle class="dot" cx="192" cy="52" r="3"/><circle class="dot" cx="224" cy="52" r="3"/><circle class="dot" cx="256" cy="52" r="3"/><circle class="dot" cx="288" cy="52" r="3"/><circle class="dot" cx="320" cy="52" r="3"/><circle class="dot" cx="352" cy="52" r="3"/><circle class="dot" cx="16" cy="84" r="3"/><circle class="dot" cx="48" cy="84" r="3"/><circle class="dot" cx="80" cy="84" r="3"/><circle class="dot" cx="112" cy="84" r="3"/><circle class="dot" cx="144" cy="84" r="3"/><circle class="dot" cx="176" cy="84" r="3"/><circle class="dot" cx="208" cy="84" r="3"/><circle class="dot" cx="240" cy="84" r="3"/><circle class="dot" cx="272" cy="84" r="3"/><circle class="dot" cx="304" cy="84" r="3"/><circle class="dot" cx="336" cy="84" r="3"/><circle class="dot" cx="368" cy="84" r="3"/>
+<rect class="blush" x="400" y="0" width="288" height="112" rx="20"/>
+<rect class="mustard" x="704" y="0" width="160" height="88" rx="20"/>
+<rect class="tan" x="880" y="0" width="80" height="64" rx="12"/>
+</svg>
+<h1 class="name">StayInTrackApp</h1>
+<p class="tag">A paper journal on the web: plan by priority, tame distractors, keep the habits that matter.</p>
+</div>
+</body>
+</html>
